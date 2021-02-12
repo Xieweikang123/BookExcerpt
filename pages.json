@@ -1,5 +1,11 @@
 {
 	"pages": [ //pages数组中第一项表示应用启动页,
+	{
+		"path": "pages/test/test",
+		"style": {
+			"navigationBarTitleText": "测试"
+		}
+	},
 		{
 			"path": "pages/main/main",
 			"style": {
@@ -26,7 +32,8 @@
 				"navigationBarTitleText": "我的"
 			}
 		}
-	],
+	   
+    ],
 	"tabBar": {
 		"color": "#7a7e83",
 		"selectedColor": "#0faeff",
