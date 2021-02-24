@@ -7,11 +7,13 @@
 		<view class="input-group" v-if="loginType === 0">
 			<view class="input-row border">
 				<text class="title">账号：</text>
-				<m-input class="m-input" type="text" clearable focus v-model="username" placeholder="请输入账号"></m-input>
+				<!-- <m-input class="m-input" type="text" clearable focus v-model="username" placeholder="请输入账号"></m-input> -->
+				<input class="m-input" type="text" v-model="username" placeholder="请输入账号"></input>
 			</view>
 			<view class="input-row">
 				<text class="title">密码：</text>
-				<m-input type="password" displayable v-model="password" placeholder="请输入密码"></m-input>
+				<!-- <m-input type="password" displayable v-model="password" placeholder="请输入密码"></m-input> -->
+				<input class="m-input" type="password"  v-model="password" placeholder="请输入密码"></input>
 			</view>
 		</view>
 		<view class="input-group" v-else>
@@ -162,6 +164,7 @@
 				 * 客户端对账号信息进行一些必要的校验。
 				 * 实际开发中，根据业务需要进行处理，这里仅做示例。
 				 */
+				console.log("username",this.username);
 				if (this.username.length < 3) {
 					uni.showToast({
 						icon: 'none',
@@ -311,6 +314,8 @@
 			}) {
 				console.log('三方登录只演示登录api能力，暂未关联云端数据');
 				if (detail.userInfo) {
+					console.log("detail",detail);
+					
 					this.loginLocal(detail.userInfo.nickName);
 				} else {
 					uni.showToast({
@@ -351,6 +356,9 @@
 </script>
 
 <style>
+	.m-input{
+		    height: auto;
+	}
 	.login-type {
 		display: flex;
 		justify-content: center;

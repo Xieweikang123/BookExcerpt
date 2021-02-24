@@ -30,6 +30,7 @@
 	export default {
 		computed: mapState(['forcedLogin', 'hasLogin', 'userName']),
 		onLoad() {
+			var that=this;
 			const loginType = uni.getStorageSync('login_type')
 			if (loginType === 'local') {
 				this.login(uni.getStorageSync('username'))
@@ -44,9 +45,9 @@
 						action: 'checkToken',
 					},
 					success: (e) => {
-
-						console.log('checkToken success', e);
-
+						console.log("e",e);
+						that.userInfo=e.result.userInfo;
+						console.log('userInfo success',that.userInfo);
 						if (e.result.code > 0) {
 							//token过期或token不合法，重新登录
 							if (this.forcedLogin) {
