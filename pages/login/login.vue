@@ -198,6 +198,7 @@
 						if (e.result.code == 0) {
 							uni.setStorageSync('uniIdToken', e.result.token)
 							uni.setStorageSync('username', e.result.username)
+							uni.setStorageSync('userInfo', e.result.userInfo)
 							uni.setStorageSync('login_type', 'online')
 							_self.toMain(_self.username);
 						} else {
