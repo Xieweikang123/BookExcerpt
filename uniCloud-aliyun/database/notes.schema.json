@@ -18,6 +18,9 @@
 		"content":{
 			"description":"内容"
 		},
+		"color":{
+			"description":"标记颜色"
+		},
 		"updateTime":{
 			"bsonType":"timestamp",
 			"description":"修改时间"

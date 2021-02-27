@@ -3,7 +3,8 @@
 	{
 		"path": "pages/main/main",
 		"style": {
-			"navigationBarTitleText": "主页"
+			"navigationBarTitleText": "主页",
+			"enablePullDownRefresh":true
 		}
 	},
 	{

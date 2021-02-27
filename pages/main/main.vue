@@ -5,7 +5,7 @@
 			<button @click="publish()" style="margin-top: 20px;" type="primary">发布</button>
 		</view>
 		<view class="noteStyle " @click="noteFun(item)" @longpress="longPressDeleteNote(item._id)" v-for="item in noteList">
-			<view class="">{{item.content}} </view>
+			<view :style="{'color':item.color?item.color:'black'}">{{item.content}} </view>
 			<view class="rightTxt">{{item.createTime}}</view>
 
 		</view>
@@ -13,11 +13,13 @@
 
 		<!-- 操作菜单 -->
 		<wyb-action-sheet ref="actionSheet" duration=200 :options="options" @itemclick="onItemClick" />
-
+		<!-- 颜色选择插件 -->
+		<picker-color :isShow="isShowPickerColor" :bottom="bottomPickerColor" @callback='getPickerColor' />
 	</view>
 </template>
 
 <script>
+	import pickerColor from "@/components/helang-pickerColor/helang-pickerColor.vue"
 	import SOtime from '../../js_sdk/fl-SOtime/SOtime.js'
 	import wybActionSheet from '@/components/wyb-action-sheet/wyb-action-sheet.vue'
 
@@ -28,14 +30,17 @@
 
 	export default {
 		components: {
+			pickerColor,
 			wybActionSheet
 		},
 		computed: mapState(['forcedLogin', 'hasLogin', 'userName']),
 		data() {
 			return {
-				focusNoteItem:{},//聚焦的笔记行项
+				bottomPickerColor: 0,
+				isShowPickerColor: false,
+				focusNoteItem: {}, //聚焦的笔记行项
 				//操作菜单选项
-				options: ['修改','标记颜色', {
+				options: ['修改', '标记颜色', {
 					label: '删除',
 					color: '#a30002'
 				}],
@@ -55,23 +60,57 @@
 				this.getUserNoteList(true);
 			}
 		},
-		onLoad() {
-
+		// 下拉刷新
+		onPullDownRefresh() {
+			console.log('refresh');
+			this.getUserNoteList(true);
+			setTimeout(function() {
+				uni.stopPullDownRefresh();
+			}, 500);
 		},
-		methods: {
 
+		methods: {
+			/* 获取颜色选择回调 */
+			getPickerColor(color) {
+				var that = this;
+				/* 隐藏弹窗 */
+				this.isShowPickerColor = false;
+				/* 判断颜色值是否有效 */
+				if (color) {
+					// this.buttonColor=color;
+					console.log('选择的颜色值是：' + color);
+					console.log("focusNoteItem", this.focusNoteItem)
+
+					const db = uniCloud.database();
+					let collection = db.collection("notes")
+					collection.where({
+							_id: that.focusNoteItem._id
+						})
+						.update({
+							color: color,
+						}).then(res => {
+							// 更新完毕
+							that.getUserNoteList();
+						});
+
+				}
+			},
 			//操作菜单回调
 			onItemClick(e) {
-				var that=this;
+				var that = this;
 				console.log("onItemClick e", e)
 				// let index = e.index
 				// let label = e.label
 
 				switch (e.label) {
+					case '标记颜色':
+						that.isShowPickerColor = true;
+						break;
+
 					case '删除':
 						uni.showModal({
-							title: '提示',
-							content: '确定删除?',
+							title: '确定删除?',
+							content: that.focusNoteItem.content,
 							success: function(res) {
 								if (res.confirm) {
 									console.log('用户点击确定');
@@ -90,19 +129,17 @@
 												showCancel: false
 											})
 										})
-								} 
+								}
 							}
 						});
-								
+
 						break;
 				}
-
-
 			},
 
 			//点击了一条笔记
 			noteFun(item) {
-				this.focusNoteItem=item;
+				this.focusNoteItem = item;
 				this.$refs.actionSheet.showActionSheet(); // 显示
 			},
 			//长按删除
@@ -113,59 +150,69 @@
 					title: '长按了',
 					icon: 'none'
 				});
-			
+
 			},
-		//检查是否登录
-		checkLogin() {
-			var that = this;
-			const loginType = uni.getStorageSync('login_type')
-			if (loginType === 'local') {
-				this.login(uni.getStorageSync('username'));
-				return
-			}
-			let uniIdToken = uni.getStorageSync('uniIdToken')
-			if (uniIdToken) {
-				this.login(uni.getStorageSync('username'))
-				uniCloud.callFunction({
-					name: 'user-center',
-					data: {
-						action: 'checkToken',
-					},
-					success: (e) => {
-						console.log("e", e);
-		
-						if (e.result.code > 0) {
-							//token过期或token不合法，重新登录
-		
-							//请先登录
-							uni.showToast({
-								title: '请先登录',
-								icon: 'none'
-							});
-		
-							setTimeout(function() {
-								uni.navigateTo({
-									url: '../login/login'
+			//检查是否登录
+			checkLogin() {
+				var that = this;
+				const loginType = uni.getStorageSync('login_type')
+				if (loginType === 'local') {
+					this.login(uni.getStorageSync('username'));
+					return
+				}
+				let uniIdToken = uni.getStorageSync('uniIdToken')
+				if (uniIdToken) {
+					this.login(uni.getStorageSync('username'))
+					uniCloud.callFunction({
+						name: 'user-center',
+						data: {
+							action: 'checkToken',
+						},
+						success: (e) => {
+							console.log("e", e);
+
+							if (e.result.code > 0) {
+								//token过期或token不合法，重新登录
+
+								//请先登录
+								uni.showToast({
+									title: '请先登录',
+									icon: 'none'
 								});
-							}, 2000);
+
+								setTimeout(function() {
+									uni.navigateTo({
+										url: '../login/login'
+									});
+								}, 2000);
+							}
+						},
+						fail(e) {
+							uni.showModal({
+								content: JSON.stringify(e),
+								showCancel: false
+							})
 						}
-					},
-					fail(e) {
-						uni.showModal({
-							content: JSON.stringify(e),
-							showCancel: false
-						})
-					}
-				})
-			} else {
-				this.guideToLogin()
-			}
-		},
-		
+					})
+				} else {
+					this.guideToLogin()
+				}
+			},
+
 			//保存笔记
 			publish() {
 				console.log("pub", this.inputContent);
 				var that = this;
+				//验证
+				if (this.inputContent.trim() == "") {
+					uni.showToast({
+						title: '请输入内容',
+						icon: "none"
+					})
+					return;
+				}
+
+
 				const db = uniCloud.database();
 
 				db.collection('notes').add({
@@ -273,9 +320,9 @@
 	}
 
 	.inputBorder {
-		    border: 1px solid #9f9f9f;
-		    padding: 6px 0;
-		    border-radius: 5px;
+		border: 1px solid #9f9f9f;
+		padding: 6px 0;
+		border-radius: 5px;
 	}
 
 	.hello {
