@@ -3,7 +3,7 @@
 	{
 		"path": "pages/main/main",
 		"style": {
-			"navigationBarTitleText": "我的笔记"
+			"navigationBarTitleText": "主页"
 		}
 	},
 	{
