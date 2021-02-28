@@ -69,6 +69,7 @@
 				});
 			},
 			bindLogout() {
+				var that=this;
 				const loginType = uni.getStorageSync('login_type')
 				if (loginType === 'local') {
 					this.logout();
@@ -91,8 +92,10 @@
 
 						if (e.result.code == 0) {
 							this.logout();
+							that.$common.userManager.writeLoginLog('logout');
 							uni.removeStorageSync('uniIdToken')
 							uni.removeStorageSync('username')
+							uni.removeStorageSync('userInfo')
 							/**
 							 * 如果需要强制登录跳转回登录页面
 							 */

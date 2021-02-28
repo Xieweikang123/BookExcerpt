@@ -13,7 +13,7 @@
 			<view class="input-row">
 				<text class="title">密码：</text>
 				<!-- <m-input type="password" displayable v-model="password" placeholder="请输入密码"></m-input> -->
-				<input class="m-input" type="password"  v-model="password" placeholder="请输入密码"></input>
+				<input class="m-input" type="password" v-model="password" placeholder="请输入密码"></input>
 			</view>
 		</view>
 		<view class="input-group" v-else>
@@ -106,7 +106,7 @@
 				this.positionTop = uni.getSystemInfoSync().windowHeight - 100;
 			},
 			sendSmsCode() {
-				if(this.codeDuration) {
+				if (this.codeDuration) {
 					uni.showModal({
 						content: `请在${this.codeDuration}秒后重试`,
 						showCancel: false
@@ -164,7 +164,7 @@
 				 * 客户端对账号信息进行一些必要的校验。
 				 * 实际开发中，根据业务需要进行处理，这里仅做示例。
 				 */
-				console.log("username",this.username);
+				console.log("username", this.username);
 				if (this.username.length < 3) {
 					uni.showToast({
 						icon: 'none',
@@ -200,7 +200,17 @@
 							uni.setStorageSync('username', e.result.username)
 							uni.setStorageSync('userInfo', e.result.userInfo)
 							uni.setStorageSync('login_type', 'online')
-							_self.toMain(_self.username);
+
+							//写入登录日志
+							_self.$common.userManager.writeLoginLog('login');
+
+							uni.showToast({
+								title: '登录成功'
+							});
+							setTimeout(function() {
+								_self.toMain(_self.username);
+							}, 1000);
+
 						} else {
 							uni.showModal({
 								content: e.result.msg,
@@ -218,7 +228,14 @@
 					}
 				})
 			},
+			
 			loginBySms() {
+
+				uni.showToast({
+					title: '暂不支持短信登录',
+					icon: 'none'
+				});
+				return;
 				if (!/^1\d{10}$/.test(this.mobile)) {
 					uni.showModal({
 						content: '手机号码填写错误',
@@ -315,8 +332,8 @@
 			}) {
 				console.log('三方登录只演示登录api能力，暂未关联云端数据');
 				if (detail.userInfo) {
-					console.log("detail",detail);
-					
+					console.log("detail", detail);
+
 					this.loginLocal(detail.userInfo.nickName);
 				} else {
 					uni.showToast({
@@ -358,9 +375,10 @@
 </script>
 
 <style>
-	.m-input{
-		    height: auto;
+	.m-input {
+		height: auto;
 	}
+
 	.login-type {
 		display: flex;
 		justify-content: center;
