@@ -1,16 +1,15 @@
 <template>
 	<view class="content">
 		<view style="margin-top: 20px;">
-			<input v-model="inputContent" class="inputBorder" />
+			<textarea maxlength="-1" style="width: auto;" v-model="inputContent" class="inputBorder">
+			</textarea>
 			<button @click="publish()" style="margin-top: 20px;" type="primary">发布</button>
 		</view>
-		<view class="noteStyle " @click="noteFun(item)" @longpress="longPressDeleteNote(item._id)" v-for="item in noteList">
+		<view class="noteStyle " @click="noteFun(item)" @longpress="longPressDeleteNote(item)" v-for="item in noteList">
 			<view :style="{'color':item.color?item.color:'black'}">{{item.content}} </view>
 			<view class="rightTxt">{{item.createTime}}</view>
 
 		</view>
-
-
 		<!-- 操作菜单 -->
 		<wyb-action-sheet ref="actionSheet" duration=200 :options="options" @itemclick="onItemClick" />
 		<!-- 颜色选择插件 -->
@@ -51,9 +50,18 @@
 		},
 		onShow() {
 			//检查登录
-			this.checkLogin();
-
+			// this.checkLogin();
 			this.userInfo = uni.getStorageSync('userInfo');
+			
+			//未登录的话，清除笔记列表
+			if(!this.userInfo){
+				this.noteList=[];
+				
+				// #ifdef MP-WEIXIN
+				//微信小程序，如果没登录，直接微信登录
+				this.loginByWeixin()
+				// #endif
+			}
 			console.log("getUserNoteList userInfo", this.userInfo)
 			//如果已有笔记，不加载
 			if (this.noteList.length == 0) {
@@ -70,6 +78,65 @@
 		},
 
 		methods: {
+			...mapMutations(['login']),
+			loginByWeixin() {
+				var that=this;
+				this.getWeixinCode().then((code) => {
+					return uniCloud.callFunction({
+						name: 'user-center',
+						data: {
+							action: 'loginByWeixin',
+							params: {
+								code,
+							}
+						}
+					})
+				}).then((res) => {
+					
+					console.log("login weixin ", res);
+					that.userInfo = res.result.userInfo;
+					uni.setStorageSync('userInfo', that.userInfo );
+					that.$common.userManager.writeLoginLog('login');
+					that.login();
+					
+					that.getUserNoteList(true);
+					
+					if (res.result.code === 0) {
+						uni.setStorageSync('uni_id_token', res.result.token)
+						uni.setStorageSync('uni_id_token_expired', res.result.tokenExpired)
+					}
+					
+				}).catch((e) => {
+					console.error(e)
+					uni.showModal({
+						showCancel: false,
+						content: '微信登录失败，请稍后再试'
+					})
+				})
+			},
+			getWeixinCode() {
+				return new Promise((resolve, reject) => {
+					// #ifdef APP-PLUS
+					weixinAuthService.authorize(function(res) {
+						resolve(res.code)
+					}, function(err) {
+						console.log(err)
+						reject(new Error('微信登录失败'))
+					});
+					// #endif
+					// #ifdef MP-WEIXIN
+					uni.login({
+						provider: 'weixin',
+						success(res) {
+							resolve(res.code)
+						},
+						fail(err) {
+							reject(new Error('微信登录失败'))
+						}
+					})
+					// #endif
+				})
+			},
 			/* 获取颜色选择回调 */
 			getPickerColor(color) {
 				var that = this;
@@ -143,13 +210,17 @@
 				this.$refs.actionSheet.showActionSheet(); // 显示
 			},
 			//长按删除
-			longPressDeleteNote(id) {
+			longPressDeleteNote(item) {
 				var that = this;
-				console.log("longPressDeleteNote", id);
-				uni.showToast({
-					title: '长按了',
-					icon: 'none'
-				});
+				console.log("longPressDeleteNote", item);
+				uni.setClipboardData({
+					data:item.content,
+					success() {
+						uni.showToast({
+							title: '复制成功'
+						});
+					}
+				})
 
 			},
 			//检查是否登录

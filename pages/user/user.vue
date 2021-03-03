@@ -2,9 +2,18 @@
 	<view class="">
 		<view class="center">
 			<view class="logo" @click="bindLogin" :hover-class="!hasLogin ? 'logo-hover' : ''">
+				<!-- #ifndef MP-WEIXIN -->
 				<image class="logo-img" :src="avatarUrl"></image>
+				<!-- #endif -->
+				<!-- #ifdef MP-WEIXIN -->
+				<open-data class="logo-img"  type="userAvatarUrl"></open-data>
+				<!-- #endif -->
 				<view class="logo-title">
-					<text class="uer-name">Hi，{{hasLogin ? userName : '您未登录'}}</text>
+					<!-- <text class="uer-name">Hi，{{userInfo ? userInfo.nickname : '您未登录'}}</text> -->
+					<!-- #ifdef MP-WEIXIN -->
+					<open-data style="color:white" type="userNickName"></open-data>
+					<!-- #endif -->
+					<!-- <text class="uer-name">Hi，{{userInfo ? userInfo.nickname : '您未登录'}}</text> -->
 					<text class="go-login navigat-arrow" v-if="!hasLogin">&#xe65e;</text>
 				</view>
 			</view>
@@ -55,11 +64,15 @@
 	export default {
 		data() {
 			return {
+				userInfo: {},
 				avatarUrl: "../../static/img/logo.png",
 			}
 		},
 		computed: {
 			...mapState(['hasLogin', 'forcedLogin', 'userName'])
+		},
+		onLoad() {
+			this.userInfo = uni.getStorageSync('userInfo');
 		},
 		methods: {
 			...mapMutations(['logout']),
@@ -69,7 +82,7 @@
 				});
 			},
 			bindLogout() {
-				var that=this;
+				var that = this;
 				const loginType = uni.getStorageSync('login_type')
 				if (loginType === 'local') {
 					this.logout();
@@ -89,28 +102,41 @@
 					success: (e) => {
 
 						console.log('logout success', e);
-
-						if (e.result.code == 0) {
-							this.logout();
-							that.$common.userManager.writeLoginLog('logout');
-							uni.removeStorageSync('uniIdToken')
-							uni.removeStorageSync('username')
-							uni.removeStorageSync('userInfo')
-							/**
-							 * 如果需要强制登录跳转回登录页面
-							 */
-							if (this.forcedLogin) {
-								uni.reLaunch({
-									url: '../login/login',
-								});
-							}
-						} else {
-							uni.showModal({
-								content: e.result.msg,
-								showCancel: false
-							})
-							console.log('登出失败', e);
+						this.logout();
+						that.$common.userManager.writeLoginLog('logout');
+						uni.removeStorageSync('uniIdToken')
+						uni.removeStorageSync('username')
+						uni.removeStorageSync('userInfo')
+						/**
+						 * 如果需要强制登录跳转回登录页面
+						 */
+						if (this.forcedLogin) {
+							uni.reLaunch({
+								url: '../login/login',
+							});
 						}
+
+						// if (e.result.code == 0) {
+						// 	this.logout();
+						// 	that.$common.userManager.writeLoginLog('logout');
+						// 	uni.removeStorageSync('uniIdToken')
+						// 	uni.removeStorageSync('username')
+						// 	uni.removeStorageSync('userInfo')
+						// 	/**
+						// 	 * 如果需要强制登录跳转回登录页面
+						// 	 */
+						// 	if (this.forcedLogin) {
+						// 		uni.reLaunch({
+						// 			url: '../login/login',
+						// 		});
+						// 	}
+						// } else {
+						// 	uni.showModal({
+						// 		content: e.result.msg,
+						// 		showCancel: false
+						// 	})
+						// 	console.log('登出失败', e);
+						// }
 
 					},
 					fail(e) {
