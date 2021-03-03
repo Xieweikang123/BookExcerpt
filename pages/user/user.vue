@@ -6,14 +6,15 @@
 				<image class="logo-img" :src="avatarUrl"></image>
 				<!-- #endif -->
 				<!-- #ifdef MP-WEIXIN -->
-				<open-data class="logo-img"  type="userAvatarUrl"></open-data>
+				<open-data class="logo-img" type="userAvatarUrl"></open-data>
 				<!-- #endif -->
 				<view class="logo-title">
-					<!-- <text class="uer-name">Hi，{{userInfo ? userInfo.nickname : '您未登录'}}</text> -->
+					<!-- #ifndef MP-WEIXIN -->
+					<text class="uer-name">Hi，{{userInfo ? userInfo.nickname : '您未登录'}}</text>
+					<!-- #endif -->
 					<!-- #ifdef MP-WEIXIN -->
 					<open-data style="color:white" type="userNickName"></open-data>
 					<!-- #endif -->
-					<!-- <text class="uer-name">Hi，{{userInfo ? userInfo.nickname : '您未登录'}}</text> -->
 					<text class="go-login navigat-arrow" v-if="!hasLogin">&#xe65e;</text>
 				</view>
 			</view>
@@ -71,7 +72,7 @@
 		computed: {
 			...mapState(['hasLogin', 'forcedLogin', 'userName'])
 		},
-		onLoad() {
+		onShow() {
 			this.userInfo = uni.getStorageSync('userInfo');
 		},
 		methods: {
@@ -195,7 +196,8 @@
 	.logo-img {
 		width: 150rpx;
 		height: 150rpx;
-		border-radius: 150rpx;
+		border-radius: 50%;
+		overflow: hidden;
 	}
 
 	.logo-title {

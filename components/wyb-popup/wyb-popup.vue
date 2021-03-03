@@ -219,7 +219,7 @@
 				default: 0.5
 			},
 			duration: {
-				type: [String, Number],
+				type: Number,
 				default: 400
 			},
 			showCloseIcon: {
@@ -320,10 +320,9 @@
 				// #endif
 			},
 			hide() {
-				console.log("hide")
 				this.contentOut()
 				this.maskOut()
-				this.wait(this.duration).then(() => {
+				this.wait(this.duration + 1).then(() => {
 					this.isShow = false
 					this.$emit('hide', {
 						pageScroll: true, 

@@ -10,6 +10,11 @@
 			<view class="rightTxt">{{item.createTime}}</view>
 
 		</view>
+		<l-modal ref="customModal" modalTitle="温馨提示" @onClickCancel="cancel" @onClickConfirm="confirm">
+			<template>
+				<p style="text-align: center;">确认充值<span style="color: red;">233元</span>？</p>
+			</template>
+		</l-modal>
 		<!-- 操作菜单 -->
 		<wyb-action-sheet ref="actionSheet" duration=200 :options="options" @itemclick="onItemClick" />
 		<!-- 颜色选择插件 -->
@@ -18,6 +23,7 @@
 </template>
 
 <script>
+	import lModal from '@/components/l-modal/l-modal.vue'
 	import pickerColor from "@/components/helang-pickerColor/helang-pickerColor.vue"
 	import SOtime from '../../js_sdk/fl-SOtime/SOtime.js'
 	import wybActionSheet from '@/components/wyb-action-sheet/wyb-action-sheet.vue'
@@ -29,6 +35,7 @@
 
 	export default {
 		components: {
+			lModal,
 			pickerColor,
 			wybActionSheet
 		},
@@ -50,13 +57,12 @@
 		},
 		onShow() {
 			//检查登录
-			// this.checkLogin();
 			this.userInfo = uni.getStorageSync('userInfo');
-			
+
 			//未登录的话，清除笔记列表
-			if(!this.userInfo){
-				this.noteList=[];
-				
+			if (!this.userInfo) {
+				this.noteList = [];
+
 				// #ifdef MP-WEIXIN
 				//微信小程序，如果没登录，直接微信登录
 				this.loginByWeixin()
@@ -79,8 +85,55 @@
 
 		methods: {
 			...mapMutations(['login']),
+			//操作菜单回调
+			onItemClick(e) {
+				var that = this;
+				console.log("onItemClick e", e)
+				// let index = e.index
+				// let label = e.label
+
+				switch (e.label) {
+					case '修改':
+						// this.$refs.modal.showModal() // 显示
+						this.$refs.customModal.showModal() // 显示
+						// this.$refs['customModal'].showModal()
+
+						break;
+					case '标记颜色':
+						that.isShowPickerColor = true;
+						break;
+					case '删除':
+						uni.showModal({
+							title: '确定删除?',
+							content: that.focusNoteItem.content,
+							success: function(res) {
+								if (res.confirm) {
+									console.log('用户点击确定');
+									const db = uniCloud.database();
+									db.collection("notes").doc(that.focusNoteItem._id).remove()
+										.then(res => {
+											uni.showToast({
+												title: '删除成功'
+											})
+											//重新获取笔记
+											that.getUserNoteList();
+										})
+										.catch((err) => {
+											uni.showModal({
+												content: err.message || '删除失败',
+												showCancel: false
+											})
+										})
+								}
+							}
+						});
+
+						break;
+				}
+			},
+
 			loginByWeixin() {
-				var that=this;
+				var that = this;
 				this.getWeixinCode().then((code) => {
 					return uniCloud.callFunction({
 						name: 'user-center',
@@ -92,20 +145,20 @@
 						}
 					})
 				}).then((res) => {
-					
+
 					console.log("login weixin ", res);
 					that.userInfo = res.result.userInfo;
-					uni.setStorageSync('userInfo', that.userInfo );
+					uni.setStorageSync('userInfo', that.userInfo);
 					that.$common.userManager.writeLoginLog('login');
 					that.login();
-					
+
 					that.getUserNoteList(true);
-					
+
 					if (res.result.code === 0) {
 						uni.setStorageSync('uni_id_token', res.result.token)
 						uni.setStorageSync('uni_id_token_expired', res.result.tokenExpired)
 					}
-					
+
 				}).catch((e) => {
 					console.error(e)
 					uni.showModal({
@@ -162,47 +215,6 @@
 
 				}
 			},
-			//操作菜单回调
-			onItemClick(e) {
-				var that = this;
-				console.log("onItemClick e", e)
-				// let index = e.index
-				// let label = e.label
-
-				switch (e.label) {
-					case '标记颜色':
-						that.isShowPickerColor = true;
-						break;
-
-					case '删除':
-						uni.showModal({
-							title: '确定删除?',
-							content: that.focusNoteItem.content,
-							success: function(res) {
-								if (res.confirm) {
-									console.log('用户点击确定');
-									const db = uniCloud.database();
-									db.collection("notes").doc(that.focusNoteItem._id).remove()
-										.then(res => {
-											uni.showToast({
-												title: '删除成功'
-											})
-											//重新获取笔记
-											that.getUserNoteList();
-										})
-										.catch((err) => {
-											uni.showModal({
-												content: err.message || '删除失败',
-												showCancel: false
-											})
-										})
-								}
-							}
-						});
-
-						break;
-				}
-			},
 
 			//点击了一条笔记
 			noteFun(item) {
@@ -214,7 +226,7 @@
 				var that = this;
 				console.log("longPressDeleteNote", item);
 				uni.setClipboardData({
-					data:item.content,
+					data: item.content,
 					success() {
 						uni.showToast({
 							title: '复制成功'
@@ -223,53 +235,6 @@
 				})
 
 			},
-			//检查是否登录
-			checkLogin() {
-				var that = this;
-				const loginType = uni.getStorageSync('login_type')
-				if (loginType === 'local') {
-					this.login(uni.getStorageSync('username'));
-					return
-				}
-				let uniIdToken = uni.getStorageSync('uniIdToken')
-				if (uniIdToken) {
-					this.login(uni.getStorageSync('username'))
-					uniCloud.callFunction({
-						name: 'user-center',
-						data: {
-							action: 'checkToken',
-						},
-						success: (e) => {
-							console.log("e", e);
-
-							if (e.result.code > 0) {
-								//token过期或token不合法，重新登录
-
-								//请先登录
-								uni.showToast({
-									title: '请先登录',
-									icon: 'none'
-								});
-
-								setTimeout(function() {
-									uni.navigateTo({
-										url: '../login/login'
-									});
-								}, 2000);
-							}
-						},
-						fail(e) {
-							uni.showModal({
-								content: JSON.stringify(e),
-								showCancel: false
-							})
-						}
-					})
-				} else {
-					this.guideToLogin()
-				}
-			},
-
 			//保存笔记
 			publish() {
 				console.log("pub", this.inputContent);
@@ -282,10 +247,16 @@
 					})
 					return;
 				}
-
+				//必须为已登录
+				if (!this.userInfo || this.userInfo._id.length == 0) {
+					uni.showToast({
+						title: '请先登录',
+						icon: "none"
+					})
+					return;
+				}
 
 				const db = uniCloud.database();
-
 				db.collection('notes').add({
 						userId: that.userInfo._id,
 						content: this.inputContent
@@ -346,33 +317,7 @@
 						uni.hideLoading();
 					});
 			},
-			...mapMutations(['login']),
-			guideToLogin() {
-				uni.showModal({
-					title: '未登录',
-					content: '您未登录，需要登录后才能继续',
-					/**
-					 * 如果需要强制登录，不显示取消按钮
-					 */
-					showCancel: !this.forcedLogin,
-					success: (res) => {
-						if (res.confirm) {
-							/**
-							 * 如果需要强制登录，使用reLaunch方式
-							 */
-							if (this.forcedLogin) {
-								uni.reLaunch({
-									url: '../login/login'
-								});
-							} else {
-								uni.navigateTo({
-									url: '../login/login'
-								});
-							}
-						}
-					}
-				});
-			}
+			...mapMutations(['login'])
 		}
 
 	}
