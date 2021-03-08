@@ -7,16 +7,17 @@
 		</view>
 		<view class="noteStyle " @click="noteFun(item)" @longpress="longPressDeleteNote(item)" v-for="item in noteList">
 			<view :style="{'color':item.color?item.color:'black'}">{{item.content}} </view>
-			<view class="rightTxt">{{item.createTime}}</view>
+			<view class="rightTxt">创建时间:{{item.createTime}} 更新时间:{{item.updateTime}}</view>
 
 		</view>
-		<l-modal ref="customModal" modalTitle="温馨提示" @onClickCancel="cancel" @onClickConfirm="confirm">
+		<l-modal top="40%" ref="customModal" modalTitle="修改" @onClickConfirm="confirmChangeContent">
 			<template>
-				<p style="text-align: center;">确认充值<span style="color: red;">233元</span>？</p>
+				<textarea fixed  maxlength="-1" style="width: auto;" v-model="changeContent" class="inputBorder">
+			</textarea>
 			</template>
 		</l-modal>
 		<!-- 操作菜单 -->
-		<wyb-action-sheet ref="actionSheet" duration=200 :options="options" @itemclick="onItemClick" />
+		<wyb-action-sheet ref="actionSheet" :duration='200' :options="options" @itemclick="onItemClick" />
 		<!-- 颜色选择插件 -->
 		<picker-color :isShow="isShowPickerColor" :bottom="bottomPickerColor" @callback='getPickerColor' />
 	</view>
@@ -42,6 +43,7 @@
 		computed: mapState(['forcedLogin', 'hasLogin', 'userName']),
 		data() {
 			return {
+				changeContent: '',
 				bottomPickerColor: 0,
 				isShowPickerColor: false,
 				focusNoteItem: {}, //聚焦的笔记行项
@@ -85,6 +87,43 @@
 
 		methods: {
 			...mapMutations(['login']),
+			//内容合法性校验
+			// async validatContent(content){
+			// 	var access_token=await this.getAccessToken();
+			// 	var url= 'https://api.weixin.qq.com/wxa/msg_sec_check?access_token='+access_token;
+			// 	var postData={
+			// 		content:content
+			// 	}
+			// 	return new Promise(resolve=>{
+			// 		uni.request({
+			// 			url:url,
+			// 			data:postData,
+			// 			method:'POST',
+			// 			success(res) {
+			// 				console.log("msg_sec_check",res)
+			// 				resolve(res.data.errmsg=="ok");
+			// 			}
+			// 		})
+			// 	})
+			// },
+			//确定修改内容
+			confirmChangeContent() {
+				var that = this;
+				console.log("focusNoteItem", this.focusNoteItem)
+
+				const db = uniCloud.database();
+				let collection = db.collection("notes")
+				collection.where({
+						_id: that.focusNoteItem._id
+					})
+					.update({
+						content: that.changeContent,
+						updateTime: (new Date()).valueOf()
+					}).then(res => {
+						// 更新完毕
+						that.getUserNoteList();
+					});
+			},
 			//操作菜单回调
 			onItemClick(e) {
 				var that = this;
@@ -94,10 +133,8 @@
 
 				switch (e.label) {
 					case '修改':
-						// this.$refs.modal.showModal() // 显示
+						this.changeContent = this.focusNoteItem.content;
 						this.$refs.customModal.showModal() // 显示
-						// this.$refs['customModal'].showModal()
-
 						break;
 					case '标记颜色':
 						that.isShowPickerColor = true;
@@ -236,9 +273,10 @@
 
 			},
 			//保存笔记
-			publish() {
+			async publish() {
 				console.log("pub", this.inputContent);
 				var that = this;
+				
 				//验证
 				if (this.inputContent.trim() == "") {
 					uni.showToast({
@@ -247,6 +285,14 @@
 					})
 					return;
 				}
+				// var isSuccess=await this.validatContent(this.inputContent);
+				// if(!isSuccess){
+				// 	uni.showToast({
+				// 		title: '输入内容不合法',
+				// 		icon: "none"
+				// 	})
+				// 	return;
+				// }
 				//必须为已登录
 				if (!this.userInfo || this.userInfo._id.length == 0) {
 					uni.showToast({
@@ -300,12 +346,14 @@
 				const db = uniCloud.database()
 				db.collection('notes').where({
 						userId: this.userInfo._id // 查询当前用户的数据。虽然代码编写在客户端，但环境变量会在云端运算
-					}).orderBy('createTime desc')
+					})
+					.orderBy('updateTime desc, createTime desc')
 					.get().then(res => {
 						console.log("res", res)
 						that.noteList = res.result.data;
 						for (var i = 0; i < that.noteList.length; i++) {
 							that.noteList[i].createTime = SOtime.time1(that.noteList[i].createTime);
+							that.noteList[i].updateTime = SOtime.time1(that.noteList[i].updateTime);
 						}
 					}).catch((err) => {
 						uni.showModal({
@@ -327,7 +375,8 @@
 	.rightTxt {
 		text-align: end;
 		color: gray;
-		font-size: 14px;
+		font-size: 12px;
+		margin-top: 9px;
 	}
 
 	.noteStyle {

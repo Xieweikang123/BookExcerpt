@@ -1,7 +1,7 @@
 <template>
 	<view v-if="isShowModal">
 		<view class="masking" v-if="showMasking" :style="{'background-color': bgColor}"></view>
-		<view class="model-wraper">
+		<view :style="{'top':top}" class="model-wraper">
 			<view class="modal-title" v-if="modalTitle !== ''">
 				{{modalTitle}}
 			</view>
@@ -19,6 +19,10 @@
 <script>
 	export default {
 		props: {
+			top:{
+				type:String,
+				default:'50%'
+			},
 			// 是否显示蒙层
 			showMasking: {
 				type: Boolean,
@@ -85,29 +89,31 @@
 		left: 0;
 		z-index: 999;
 	}
+
 	.model-wraper {
 		width: 600rpx;
 		background-color: #fff;
 		border-radius: 16rpx;
-		position: absolute;
+		position: fixed;
 		z-index: 1000;
 		top: 50%;
+		transform: translateY(-50%);
 		left: 50%;
-		margin-top: -161rpx;
 		margin-left: -300rpx;
-		box-shadow: #dcdcdc 0px 0px 20rpx;
 	}
+
 	.modal-title {
-		height: 90rpx;
-		line-height: 90rpx;
-		width: 100%;
-		text-align: center;
-		font-size: 32rpx;
-		color: #666;
+		    padding: 8px 0px;
+		    width: 100%;
+		    text-align: center;
+		    font-size: 19px;
+		    color: #000;
 	}
+
 	.modal-body {
-		padding: 60rpx 30rpx 80rpx 30rpx;
+		padding: 2px 16px;
 	}
+
 	.btn {
 		width: 300rpx;
 		height: 90rpx;
@@ -117,6 +123,7 @@
 		float: left;
 		border-top: 1rpx solid #ddd;
 	}
+
 	.btn.cancel {
 		width: 299rpx;
 		border-right: 1rpx solid #dcdcdc;

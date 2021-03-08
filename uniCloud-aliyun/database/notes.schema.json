@@ -23,7 +23,10 @@
 		},
 		"updateTime": {
 			"bsonType": "timestamp",
-			"description": "修改时间"
+			"description": "修改时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
 		},
 		"createTime": {
 			"bsonType": "timestamp",
