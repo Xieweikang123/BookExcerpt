@@ -1,10 +1,8 @@
 <template>
-	<view class="content">
-		<view style="margin-top: 20px;">
-			<textarea maxlength="-1" style="width: auto;" v-model="inputContent" class="inputBorder">
-			</textarea>
-			<button @click="publish()" style="margin-top: 20px;" type="primary">发布</button>
-		</view>
+	<view @touchstart="touchStart" @touchend="touchEnd" class="content">
+		<!-- <uni-search-bar @confirm="search" @input="input" ></uni-search-bar> -->
+		<uni-easyinput suffixIcon="search" v-model="searchValue" placeholder="请输入内容" @confirm="onSearch"	 @iconClick="onSearch()"></uni-easyinput>
+
 		<view class="noteStyle " @click="noteFun(item)" @longpress="longPressDeleteNote(item)" v-for="item in noteList">
 			<view :style="{'color':item.color?item.color:'black'}">{{item.content}} </view>
 			<view class="rightTxt">创建时间:{{item.createTime}} 更新时间:{{item.updateTime}}</view>
@@ -12,7 +10,7 @@
 		</view>
 		<l-modal top="40%" ref="customModal" modalTitle="修改" @onClickConfirm="confirmChangeContent">
 			<template>
-				<textarea fixed  maxlength="-1" style="width: auto;" v-model="changeContent" class="inputBorder">
+				<textarea fixed maxlength="-1" style="width: auto;" v-model="changeContent" class="inputBorder">
 			</textarea>
 			</template>
 		</l-modal>
@@ -20,6 +18,17 @@
 		<wyb-action-sheet ref="actionSheet" :duration='200' :options="options" @itemclick="onItemClick" />
 		<!-- 颜色选择插件 -->
 		<picker-color :isShow="isShowPickerColor" :bottom="bottomPickerColor" @callback='getPickerColor' />
+		<uni-drawer ref="showLeft" mode="left" :width="drawerWidth" @change="change($event,'showLeft')">
+			<!-- <view class="close">
+				<view class="word-btn" hover-class="word-btn--hover" :hover-start-time="20" :hover-stay-time="70" @click="closeDrawer('showLeft')"><text
+					 class="word-btn-white">关闭Drawer</text></view>
+			</view> -->
+			<view style="margin-top: 20px;">
+				<textarea maxlength="-1" style="width: auto;" v-model="inputContent" class="inputBorder">
+				</textarea>
+				<button @click="publish()" style="margin-top: 20px;" type="primary">发布</button>
+			</view>
+		</uni-drawer>
 	</view>
 </template>
 
@@ -43,6 +52,10 @@
 		computed: mapState(['forcedLogin', 'hasLogin', 'userName']),
 		data() {
 			return {
+				searchValue: '',
+				drawerWidth: 200,
+				touchStartX: 0, // 触屏起始点x  
+				touchStartY: 0, // 触屏起始点y  
 				changeContent: '',
 				bottomPickerColor: 0,
 				isShowPickerColor: false,
@@ -87,6 +100,46 @@
 
 		methods: {
 			...mapMutations(['login']),
+			//点击搜索
+			onSearch() {
+				this.getUserNoteList()
+			},
+			/**  
+			 * 触摸开始  
+			 **/
+			touchStart(e) {
+				console.log("触摸开始")
+				this.touchStartX = e.touches[0].clientX;
+				this.touchStartY = e.touches[0].clientY;
+			},
+
+			/**  
+			 * 触摸结束  
+			 **/
+			touchEnd(e) {
+				console.log("触摸结束")
+				let deltaX = e.changedTouches[0].clientX - this.touchStartX;
+				let deltaY = e.changedTouches[0].clientY - this.touchStartY;
+				if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+					if (deltaX >= 0) {
+						console.log("左滑")
+						this.$refs.showLeft.open()
+						// uni.showToast({
+						// 	title:'左滑'
+						// })
+					} else {
+						console.log("右滑")
+					}
+				} else if (Math.abs(deltaY) > 50 && Math.abs(deltaX) < Math.abs(deltaY)) {
+					if (deltaY < 0) {
+						console.log("上滑")
+					} else {
+						console.log("下滑")
+					}
+				} else {
+					console.log("可能是误触！")
+				}
+			},
 			//内容合法性校验
 			// async validatContent(content){
 			// 	var access_token=await this.getAccessToken();
@@ -276,7 +329,7 @@
 			async publish() {
 				console.log("pub", this.inputContent);
 				var that = this;
-				
+
 				//验证
 				if (this.inputContent.trim() == "") {
 					uni.showToast({
@@ -344,9 +397,12 @@
 				}
 				var that = this;
 				const db = uniCloud.database()
-				db.collection('notes').where({
-						userId: this.userInfo._id // 查询当前用户的数据。虽然代码编写在客户端，但环境变量会在云端运算
-					})
+				var whereStr="userId=='" +this.userInfo._id+"'";
+				if(this.searchValue!=''){
+					whereStr=whereStr+"&&/"+this.searchValue+"/.test(content)";
+				}
+				console.log("searchValue",whereStr)
+				db.collection('notes').where(whereStr)
 					.orderBy('updateTime desc, createTime desc')
 					.get().then(res => {
 						console.log("res", res)
