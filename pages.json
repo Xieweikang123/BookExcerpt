@@ -1,19 +1,20 @@
 {
 	"pages": [ //pages数组中第一项表示应用启动页,
-	{
-		"path": "pages/main/main",
-		"style": {
-			"navigationBarTitleText": "主页",
-			"enablePullDownRefresh":true
-		}
-	},
-	{
-		"path": "pages/test/test",
-		"style": {
-			"navigationBarTitleText": "测试"
-		}
-	},
-		 {
+		{
+			"path": "pages/main/main",
+			"style": {
+				"navigationBarTitleText": "主页",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/public/public",
+			"style": {
+				"navigationBarTitleText": "广场",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
 			"path": "pages/login/login",
 			"style": {
 				"navigationBarTitleText": "登录"
@@ -34,17 +35,22 @@
 				"navigationBarTitleText": "我的"
 			}
 		}
-	   
-    ],
+
+	],
 	"tabBar": {
 		"color": "#7a7e83",
 		"selectedColor": "#0faeff",
 		"backgroundColor": "#ffffff",
 		"list": [{
 			"pagePath": "pages/main/main",
-			"text": "首页",
+			"text": "个人",
 			"iconPath": "static/img/home.png",
 			"selectedIconPath": "static/img/homeHL.png"
+		}, {
+			"pagePath": "pages/public/public",
+			"text": "广场",
+			"iconPath": "static/img/public.png",
+			"selectedIconPath": "static/img/publicA.png"
 		}, {
 			"pagePath": "pages/user/user",
 			"text": "我的",

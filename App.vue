@@ -82,7 +82,8 @@
 		flex: 1;
 		flex-direction: column;
 		background-color: #efeff4;
-		padding: 10px;
+		padding: 10PX 17px;
+		
 	}
 
 	.input-group {

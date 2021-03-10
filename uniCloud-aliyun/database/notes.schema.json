@@ -21,6 +21,10 @@
 		"color": {
 			"description": "标记颜色"
 		},
+		"isPublic": {
+			"description": "是否公开",
+			"defaultValue": false
+		},
 		"updateTime": {
 			"bsonType": "timestamp",
 			"description": "修改时间",

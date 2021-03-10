@@ -1,9 +1,10 @@
 <template>
 	<view @touchstart="touchStart" @touchend="touchEnd" class="content">
 		<!-- <uni-search-bar @confirm="search" @input="input" ></uni-search-bar> -->
-		<uni-easyinput suffixIcon="search" v-model="searchValue" placeholder="请输入内容" @confirm="onSearch"	 @iconClick="onSearch()"></uni-easyinput>
+		<uni-easyinput suffixIcon="search" v-model="searchValue" placeholder="请输入内容" @confirm="onSearch"
+			@iconClick="onSearch()"></uni-easyinput>
 
-		<view class="noteStyle " @click="noteFun(item)" @longpress="longPressDeleteNote(item)" v-for="item in noteList">
+		<view class="noteStyle " :style="{'border-bottom':item.isPublic?'3px double #4397ee':''}" @click="noteFun(item)" @longpress="longPressDeleteNote(item)" v-for="item in noteList">
 			<view :style="{'color':item.color?item.color:'black'}">{{item.content}} </view>
 			<view class="rightTxt">创建时间:{{item.createTime}} 更新时间:{{item.updateTime}}</view>
 
@@ -61,7 +62,7 @@
 				isShowPickerColor: false,
 				focusNoteItem: {}, //聚焦的笔记行项
 				//操作菜单选项
-				options: ['修改', '标记颜色', {
+				options: ['修改', '标记颜色', '公开', {
 					label: '删除',
 					color: '#a30002'
 				}],
@@ -177,6 +178,31 @@
 						that.getUserNoteList();
 					});
 			},
+
+			//点击了一条笔记
+			noteFun(item) {
+				this.focusNoteItem = item;
+				//弹出框显示 ：公开/私有
+				// this.options[2] = item.isPublic ? "私有" : '公开';
+				
+				this.$set(this.options, 2, item.isPublic ? "私有" : '公开')
+
+				console.log("note click", this.focusNoteItem)
+				console.log("note options", this.options)
+				this.$refs.actionSheet.showActionSheet(); // 显示
+			},
+			updateNote(updateContent) {
+				var that=this;
+				const db = uniCloud.database();
+				let collection = db.collection("notes")
+				collection.where({
+						_id: that.focusNoteItem._id
+					})
+					.update(updateContent).then(res => {
+						// 更新完毕
+						that.getUserNoteList();
+					});
+			},
 			//操作菜单回调
 			onItemClick(e) {
 				var that = this;
@@ -191,6 +217,18 @@
 						break;
 					case '标记颜色':
 						that.isShowPickerColor = true;
+						break;
+					case '公开':
+						this.updateNote({
+							isPublic: true,
+							updateTime: (new Date()).valueOf()
+						});
+						break;
+					case '私有':
+						this.updateNote({
+							isPublic: false,
+							updateTime: (new Date()).valueOf()
+						});
 						break;
 					case '删除':
 						uni.showModal({
@@ -306,12 +344,7 @@
 				}
 			},
 
-			//点击了一条笔记
-			noteFun(item) {
-				this.focusNoteItem = item;
-				this.$refs.actionSheet.showActionSheet(); // 显示
-			},
-			//长按删除
+			//长按复制
 			longPressDeleteNote(item) {
 				var that = this;
 				console.log("longPressDeleteNote", item);
@@ -397,11 +430,11 @@
 				}
 				var that = this;
 				const db = uniCloud.database()
-				var whereStr="userId=='" +this.userInfo._id+"'";
-				if(this.searchValue!=''){
-					whereStr=whereStr+"&&/"+this.searchValue+"/.test(content)";
+				var whereStr = "userId=='" + this.userInfo._id + "'";
+				if (this.searchValue != '') {
+					whereStr = whereStr + "&&/" + this.searchValue + "/.test(content)";
 				}
-				console.log("searchValue",whereStr)
+				console.log("searchValue", whereStr)
 				db.collection('notes').where(whereStr)
 					.orderBy('updateTime desc, createTime desc')
 					.get().then(res => {

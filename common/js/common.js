@@ -8,10 +8,10 @@ var userManager={
 	writeLoginLog:function(loginType) {
 		var that=this;
 		var userInfo = uni.getStorageSync('userInfo');
-		
+		console.log("write log userinfo",userInfo)
 		const db = uniCloud.database();
 		db.collection('uni-id-log').add({
-				user_id: userInfo._id,
+				user_id: userInfo._id?userInfo._id:userInfo,
 				type: loginType,
 				state:1,
 				ip:userInfo.last_login_ip?userInfo.last_login_ip:userInfo.register_ip
