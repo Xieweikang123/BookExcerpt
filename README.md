@@ -6,10 +6,8 @@
 ![](https://img-cdn-qiniu.dcloud.net.cn/659AE293-95F8-46E1-AC1F-D62FE3B080DB.png?imageView2/0/w/375)
 
 ## 快速体验
-
-手机扫码体验：
-
-![](https://img.cdn.aliyun.dcloud.net.cn/uni-app/uni-template-login-qr.png)
+ 
+ 小程序搜索：  云书摘
 
 ## 本地运行
 
